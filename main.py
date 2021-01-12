@@ -6,6 +6,6 @@ if __name__ == "__main__":
     model.run_model()
 
     data = model.datacollector.get_model_vars_dataframe()
-    print(data.plot())
+    data.plot()
     plt.show()
     print(data)

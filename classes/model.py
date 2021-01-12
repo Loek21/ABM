@@ -12,10 +12,10 @@ class FishingModel(Model):
     Wolf-Sheep Predation Type Model for Fishermen and Fish
     '''
 
-    def __init__(self, height=20, width=20,
-                 initial_fish=200, initial_fishermen=30,
-                 fish_reproduction_number=2, catch_rate=24,
-                 max_load=24, initial_wallet = 10000, initial_school_size = 10000, split_size = 15000):
+    def __init__(self, height=40, width=40,
+                 initial_fish=200, initial_fishermen=50,
+                 fish_reproduction_number=1.5, catch_rate=8,
+                 max_load=24, initial_wallet = 10000, initial_school_size = 100, split_size = 150):
 
         super().__init__()
 
@@ -29,6 +29,8 @@ class FishingModel(Model):
         self.initial_school_size = initial_school_size
         self.split_size = split_size
         self.max_load = max_load
+        self.avg_wallet = initial_wallet
+        self.avg_school_size = initial_school_size
 
         # Add a schedule for fish and fishermen seperately to prevent race-conditions
         self.schedule_Fish = RandomActivation(self)
@@ -37,7 +39,9 @@ class FishingModel(Model):
         self.grid = MultiGrid(self.width, self.height, torus=True)
         self.datacollector = DataCollector(
              {"Fish": lambda m: self.schedule_Fish.get_agent_count(),
-              "Fishermen": lambda m: self.schedule_Fisherman.get_agent_count()})
+              "Fishermen": lambda m: self.schedule_Fisherman.get_agent_count(),
+              "Average wallet": lambda m: self.avg_wallet*0.01,
+              "Average school size": lambda m: self.avg_school_size})
 
         # Keep a list of all agents
         self.agents = []
@@ -93,7 +97,7 @@ class FishingModel(Model):
         # Save the statistics
         self.datacollector.collect(self)
 
-    def run_model(self, step_count=3000):
+    def run_model(self, step_count=5000):
         '''
         Method that runs the model for a specific amount of steps.
         '''
