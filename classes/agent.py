@@ -1,5 +1,8 @@
 from mesa import Agent, Model
-from classes.model import FishingModel
+from mesa.space import MultiGrid
+import random
+
+# from classes.model import FishingModel
 
 class Random(Agent):
     def __init__(self, id, model, pos, size, wallet, switch, init_wait_time):
@@ -19,8 +22,8 @@ class Random(Agent):
 
 
 class Fish(Random):
-    def __init__(self, id, model, pos, size):
-        super().__init__(id, model, pos, size)
+    def __init__(self, id, model, pos, size, wallet, switch, init_wait_time):
+        super().__init__(id, model, pos, size, wallet, switch, init_wait_time)
 
     def step(self):
         '''
@@ -30,12 +33,14 @@ class Fish(Random):
         curr_time = self.model.schedule_Fish.time
         self.move()
 
-        # New fish spawn yearly
-        if curr_time % 365 == 0:
+        # New fish spawn yearly (added + 1 just so they don't reproduce immediately)
+        if (curr_time + 1) % 365 == 0:
             self.size *= self.model.fish_reproduction_number
+            print('SIZE INCREASED TO', self.size)
 
         # Schools above N tonnes will split in half
         if self.size > self.model.split_size:
+            print('SPLITTING')
             self.model.new_agent(Fish, self.pos, self.size*0.5, 0, True, 0)
             self.size *= 0.5
 
@@ -50,13 +55,13 @@ class Fisherman(Random):
 
     def step(self):
 
-        if switch == False:
+        if self.switch == False:
             curr_time = self.model.schedule_Fisherman.time
             self.move()
 
             surrounding = MultiGrid.get_neighbors(self.model.grid, self.pos, True, True,0)
 
-            for fish in surrounding:
+            for agent in surrounding:
 
                 if type(agent) == Fish:
                     if agent.size <= self.model.catch_rate:
@@ -75,6 +80,15 @@ class Fisherman(Random):
                 self.wallet += self.model.initial_wallet
                 self.switch = True
                 self.init_wait_time = curr_time
+            
+            total_wallet = 0
+            for agent in self.model.agents:
+                total_wallet += agent.wallet
+
+            wallet_mean = total_wallet / self.model.schedule_Fisherman.get_agent_count()
+
+            if wallet_mean > 30000:
+                self.model.new_agent(Fisherman, self.pos, 0, self.model.initial_wallet, False, 0)
 
             if self.wallet == 0:
                 self.model.remove_agent(self)
@@ -82,14 +96,6 @@ class Fisherman(Random):
             # Daily cost of living
             self.wallet -= 1000
 
-            total_wallet = 0
-            for agent in self.model.agents:
-                total_wallet += agent.wallet
-
-            wallet_mean = total_wallet / self.schedule_Fisherman.get_agent_count()
-
-            if wallet_mean > 30000:
-                self.model.new_agent(Fisherman, self.pos, 0, self.model.initial_wallet, False, 0)
 
         # Pauzes if load is full
         elif self.model.schedule_Fisherman.time - self.init_wait_time > 4:

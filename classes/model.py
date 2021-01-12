@@ -12,10 +12,10 @@ class FishingModel(Model):
     Wolf-Sheep Predation Type Model for Fishermen and Fish
     '''
 
-    def __init__(self, height=50, width=50,
-                 initial_fish=100, initial_fishermen=30,
-                 fish_reproduction_number=1750, catch_rate=24,
-                 max_load=24, initial_wallet = 10000, initial_school_size = 10000):
+    def __init__(self, height=20, width=20,
+                 initial_fish=200, initial_fishermen=30,
+                 fish_reproduction_number=2, catch_rate=24,
+                 max_load=24, initial_wallet = 10000, initial_school_size = 10000, split_size = 15000):
 
         super().__init__()
 
@@ -27,6 +27,8 @@ class FishingModel(Model):
         self.catch_rate = catch_rate
         self.initial_wallet = initial_wallet
         self.initial_school_size = initial_school_size
+        self.split_size = split_size
+        self.max_load = max_load
 
         # Add a schedule for fish and fishermen seperately to prevent race-conditions
         self.schedule_Fish = RandomActivation(self)
@@ -36,6 +38,9 @@ class FishingModel(Model):
         self.datacollector = DataCollector(
              {"Fish": lambda m: self.schedule_Fish.get_agent_count(),
               "Fishermen": lambda m: self.schedule_Fisherman.get_agent_count()})
+
+        # Keep a list of all agents
+        self.agents = []
 
         # Create fish and fishermen
         self.init_population(Fish, self.initial_fish)
@@ -66,6 +71,8 @@ class FishingModel(Model):
         agent = agent_type(self.next_id(), self, pos, size, wallet, switch, init_wait_time)
 
         self.grid.place_agent(agent, pos)
+        self.agents.append(agent)
+
         getattr(self, f'schedule_{agent_type.__name__}').add(agent)
 
     def remove_agent(self, agent):
@@ -73,6 +80,7 @@ class FishingModel(Model):
         Method that removes an agent from the grid and the correct scheduler.
         '''
         self.grid.remove_agent(agent)
+        self.agents.remove(agent)
         getattr(self, f'schedule_{type(agent).__name__}').remove(agent)
 
     def step(self):
@@ -85,9 +93,13 @@ class FishingModel(Model):
         # Save the statistics
         self.datacollector.collect(self)
 
-    def run_model(self, step_count=1825):
+    def run_model(self, step_count=3000):
         '''
         Method that runs the model for a specific amount of steps.
         '''
         for i in range(step_count):
+            print(i)
+            # if either the Fish or the Fishermen amount reaches 0, stop.
+            if self.schedule_Fish.get_agent_count() == 0 or self.schedule_Fisherman.get_agent_count() == 0:
+                break
             self.step()
