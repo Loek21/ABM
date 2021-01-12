@@ -1,5 +1,5 @@
 from mesa import Agent, Model
-from model import FishingModel
+from classes.model import FishingModel
 
 class Random(Agent):
     def __init__(self, id, model, pos, size, wallet, switch, init_wait_time):

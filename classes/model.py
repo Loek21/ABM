@@ -5,6 +5,8 @@ from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
 
+from .agent import *
+
 class FishingModel(Model):
     '''
     Wolf-Sheep Predation Type Model for Fishermen and Fish

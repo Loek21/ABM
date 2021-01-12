@@ -1,4 +1,4 @@
-from class.model import *
+from classes.model import *
 
 if __name__ == "__main__":
     model = FishingModel()
