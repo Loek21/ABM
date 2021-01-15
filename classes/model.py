@@ -14,7 +14,7 @@ class FishingModel(Model):
 
     def __init__(self, height=40, width=40,
                  initial_fish=200, initial_fishermen=50,
-                 fish_reproduction_number=1.5, catch_rate=8,
+                 fish_reproduction_number=1.1, catch_rate=8,
                  max_load=24, initial_wallet = 10000, initial_school_size = 100, split_size = 150):
 
         super().__init__()
@@ -97,7 +97,7 @@ class FishingModel(Model):
         # Save the statistics
         self.datacollector.collect(self)
 
-    def run_model(self, step_count=5000):
+    def run_model(self, step_count=2000):
         '''
         Method that runs the model for a specific amount of steps.
         '''
