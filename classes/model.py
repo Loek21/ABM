@@ -16,7 +16,7 @@ class FishingModel(Model):
                  initial_fish=300, initial_fishermen=100,
                  initial_school_size = 100, split_size = 200, fish_reproduction_number=1.03,
                  initial_wallet = 100, catch_rate=15, max_load=30, full_catch_reward = 100,
-                 initial_wallet_survival = 12*2, prop_plus_wallet_spawn = 1, avg_wallet_spawn_threshold = 5.0, energy_gain = 5, energy_loss = 1,
+                 initial_wallet_survival = 12*2, prop_plus_wallet_spawn = 1, avg_wallet_spawn_threshold = 5.0, energy_gain = 5, energy_loss = 1, track_n_rolling_gains = 4*3,
                  initial_energy = 10, regrowth_time = 10, food_bool = True, no_fish_zone_bool = True, quotum_bool = True, no_fish_size = 0, quotum = 0,
                 ):
         super().__init__()
@@ -29,6 +29,7 @@ class FishingModel(Model):
         self.initial_wallet = initial_wallet
         self.initial_wallet_survival = initial_wallet_survival
         self.initial_school_size = initial_school_size
+        self.cumulative_gain = 0
 
         # Booleans
         self.food_bool = food_bool
@@ -54,6 +55,7 @@ class FishingModel(Model):
         self.prop_plus_wallet_spawn = prop_plus_wallet_spawn
         self.avg_wallet_spawn_threshold = avg_wallet_spawn_threshold
         self.this_avg_wallet = initial_wallet
+        self.track_n_rolling_gains = track_n_rolling_gains
 
         # food
         self.energy_gain = energy_gain
@@ -86,14 +88,16 @@ class FishingModel(Model):
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
-                  "Available food": lambda m: self.food_amount})
+                  "Available food": lambda m: self.food_amount,
+                  "Cumulative gain": lambda m: self.cumulative_gain})
         else:
             self.datacollector = DataCollector(
                  {"Fish schools": lambda m: self.schedule_Fish.get_agent_count(),
                   "Fishermen": lambda m: self.schedule_Fisherman.get_agent_count(),
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
-                  "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01})
+                  "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
+                  "Cumulative gain": lambda m: self.cumulative_gain})
 
         # Keep a list of all agents
         self.agents = []
@@ -156,6 +160,9 @@ class FishingModel(Model):
         '''
         n_fisherman   = self.schedule_Fisherman.get_agent_count()
         profitability = self.this_avg_wallet / self.initial_wallet
+        
+        rolling_gains = statistics.mean( [sum(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
+        print(rolling_gains)
 
         # make sure that at least one fisherman exists, who wouldn't try a new bussiness in a new field?
         if n_fisherman == 0:

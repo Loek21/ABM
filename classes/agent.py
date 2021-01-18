@@ -1,6 +1,7 @@
 from mesa import Agent, Model
 from mesa.space import MultiGrid
 import random
+import statistics as statistics
 
 # from classes.model import FishingModel
 
@@ -102,8 +103,11 @@ class Fisherman(Random):
         super().__init__(id, model, pos, size, wallet, switch, regrowth_time, food, energy_loss)
 
         self.start_wait_time = 0
+        self.rolling_gains   = [0] * self.model.track_n_rolling_gains
 
     def step(self):
+
+        temp_gain = 0
 
         # fishing or waiting behavior
         #if not self.switch:
@@ -135,13 +139,23 @@ class Fisherman(Random):
 
             if self.size == self.model.max_load:
                 self.size    = 0
-                self.wallet += self.model.full_catch_reward
+                temp_gain    += self.model.full_catch_reward
                 #self.switch  = True
                 self.start_wait_time = self.model.schedule_Fisherman.time
 
         # paying the weekly cost of living
-        self.wallet -= self.model.initial_wallet / self.model.initial_wallet_survival
+        temp_gain -= self.model.initial_wallet / self.model.initial_wallet_survival
 
         # removing ig going bankrupt
         if self.wallet <= 0:
             self.model.remove_agent(self)
+
+        # update the rolling gains
+        del self.rolling_gains[0]
+        self.rolling_gains.append(temp_gain)
+
+        # update the wallet
+        self.wallet  += temp_gain
+
+        # update the overall cumulative gain
+        self.model.cumulative_gain += temp_gain
