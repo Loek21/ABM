@@ -232,7 +232,7 @@ class FishingModel(Model):
         '''
         Method that calls the step method for each of the sheep, and then for each of the wolves.
         '''
-        self.schedule.step()
+
         self.schedule_Fish.step()
         self.schedule_Fisherman.step()
 

@@ -10,6 +10,22 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 
 # OFAT parameters
+
+def run_model_new(self, model):
+        """Run a model object to completion, or until reaching max steps.
+        If your model runs in a non-standard way, this is the method to modify
+        in your subclass.
+        """
+        while model.running and model.schedule_Fisherman.steps < self.max_steps:
+            model.step()
+
+        if hasattr(model, "datacollector"):
+            return model.datacollector
+        else:
+            return None
+
+BatchRunner.run_model = run_model_new
+
 problem = {
     'num_vars': 1,
     'names': ['initial_fish'],
@@ -22,7 +38,7 @@ max_steps = 100
 distinct_samples = 30
 
 # Set the outputs
-model_reporters = {"Fish": lambda m: m.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01}
+model_reporters = {"Fish": lambda m: m.schedule_Fish.get_agent_count() * m.this_avg_school_size*0.01}
 
 data = {}
 
