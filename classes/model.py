@@ -1,5 +1,5 @@
 import random
-
+import numpy as np
 from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
@@ -11,13 +11,21 @@ class FishingModel(Model):
     '''
     Wolf-Sheep Predation Type Model for Fishermen and Fish
     '''
+    food_bool = False
+    no_fish_zone_bool = True
+    quotum_bool = False
+    no_fish_size = 0.25
+    quotum = 3000
+    step_count = 5000
+    # model = FishingModel(food_bool = food_bool, no_fish_zone_bool = no_fish_zone_bool, quotum_bool = quotum_bool, no_fish_size = no_fish_size, quotum = quotum)
+    # model.run_model(iterations)
 
     def __init__(self, height=40, width=40,
                  initial_fish=300, initial_fishermen=100,
                  initial_school_size = 100, split_size = 200, fish_reproduction_number=1.03,
                  initial_wallet = 100, catch_rate=15, max_load=30, full_catch_reward = 100,
                  initial_wallet_survival = 12*2, prop_plus_wallet_spawn = 1, avg_wallet_spawn_threshold = 5.0, energy_gain = 5, energy_loss = 1, track_n_rolling_gains = 4*3,
-                 initial_energy = 10, regrowth_time = 10, food_bool = True, no_fish_zone_bool = True, quotum_bool = True, no_fish_size = 0, quotum = 0,
+                 initial_energy = 10, regrowth_time = 10, food_bool = False, no_fish_zone_bool = False, quotum_bool = False, no_fish_size = 0, quotum = 0,
                 ):
         super().__init__()
 
@@ -51,6 +59,7 @@ class FishingModel(Model):
         else:
             self.yearly_quotum = 1000000000
         self.total_yearly_caught = 0
+        self.total_yearly_caught_prev = 8000
         self.recruitment_switch = True
         self.prop_plus_wallet_spawn = prop_plus_wallet_spawn
         self.avg_wallet_spawn_threshold = avg_wallet_spawn_threshold
@@ -74,6 +83,8 @@ class FishingModel(Model):
             self.no_fish_size = 0
 
         # Add a schedule for fish and fishermen seperately to prevent race-conditions
+        # self.schedule = RandomActivation(self)
+        # new_agent()
         self.schedule_Fish = RandomActivation(self)
         self.schedule_Fisherman = RandomActivation(self)
         if self.food_bool == True:
@@ -89,7 +100,8 @@ class FishingModel(Model):
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
                   "Available food": lambda m: self.food_amount,
-                  "Cumulative gain": lambda m: self.cumulative_gain})
+                  # "Cumulative gain": lambda m: self.cumulative_gain,
+                  "Fish price": lambda m: self.full_catch_reward})
         else:
             self.datacollector = DataCollector(
                  {"Fish schools": lambda m: self.schedule_Fish.get_agent_count(),
@@ -97,7 +109,8 @@ class FishingModel(Model):
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
-                  "Cumulative gain": lambda m: self.cumulative_gain})
+                  # "Cumulative gain": lambda m: self.cumulative_gain,
+                  "Fish price": lambda m: self.full_catch_reward})
 
         # Keep a list of all agents
         self.agents = []
@@ -160,9 +173,9 @@ class FishingModel(Model):
         '''
         n_fisherman   = self.schedule_Fisherman.get_agent_count()
         profitability = self.this_avg_wallet / self.initial_wallet
-        
-        rolling_gains = statistics.mean( [sum(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
-        print(rolling_gains)
+
+        # rolling_gains = statistics.mean( [sum(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
+        # print(rolling_gains)
 
         # make sure that at least one fisherman exists, who wouldn't try a new bussiness in a new field?
         if n_fisherman == 0:
@@ -219,6 +232,7 @@ class FishingModel(Model):
         '''
         Method that calls the step method for each of the sheep, and then for each of the wolves.
         '''
+        self.schedule.step()
         self.schedule_Fish.step()
         self.schedule_Fisherman.step()
 
@@ -233,7 +247,9 @@ class FishingModel(Model):
             self.recruit_fisherman()
 
         # Save the statistics
-        self.datacollector.collect(self)
+        curr_time = self.schedule_Fish.time
+        if (curr_time + 26) % 52 == 0:
+            self.datacollector.collect(self)
 
     def run_model(self, step_count):
         '''
@@ -247,8 +263,13 @@ class FishingModel(Model):
                 break
 
             if (i+1) % 52 == 0:
-                # print('reproduction at:', i)
                 self.calc_fish_reproduction()
+                self.full_catch_reward = 100 * self.total_yearly_caught_prev/self.total_yearly_caught
+                if self.full_catch_reward < 20:
+                    self.full_catch_reward = 20
+                if self.full_catch_reward > 250:
+                    self.full_catch_reward = 250
+                self.total_yearly_caught_prev = self.total_yearly_caught
                 self.total_yearly_caught = 0
                 self.recruitment_switch = True
             self.step()
