@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import combinations
+import concurrent.futures
+import sys
 
 # OFAT parameters
 
@@ -23,44 +25,6 @@ def run_model_new(self, model):
             return model.datacollector
         else:
             return None
-
-BatchRunner.run_model = run_model_new
-
-problem = {
-    'num_vars': 1,
-    'names': ['initial_fish'],
-    'bounds': [[100, 500]]
-}
-
-# Set the repetitions, the amount of steps, and the amount of distinct values per variable
-replicates = 30
-max_steps = 100
-distinct_samples = 30
-
-# Set the outputs
-model_reporters = {"Fish": lambda m: m.schedule_Fish.get_agent_count() * m.this_avg_school_size*0.01}
-
-data = {}
-
-for i, var in enumerate(problem['names']):
-    # Get the bounds for this variable and get <distinct_samples> samples within this space (uniform)
-    samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype = int)
-
-    # Keep in mind that wolf_gain_from_food should be integers. You will have to change
-    # your code to acommodate for this or sample in such a way that you only get integers.
-    # if var == 'wolf_gain_from_food':
-    #     samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype=int)
-
-    batch = BatchRunner(FishingModel,
-                        max_steps=max_steps,
-                        iterations=replicates,
-                        variable_parameters={var: samples},
-                        model_reporters=model_reporters,
-                        display_progress=True)
-
-    batch.run_all()
-
-    data[var] = batch.get_model_vars_dataframe()
 
 def plot_param_var_conf(ax, df, var, param, i):
     """
@@ -80,12 +44,14 @@ def plot_param_var_conf(ax, df, var, param, i):
     err = (1.96 * df.groupby(var)[param].std()) / np.sqrt(replicates)
 
     ax.plot(x, y, c='k')
-    ax.fill_between(x, y - err, y + err)
+    ax.fill_between(x, y - err, y + err, alpha=0.5)
 
     ax.set_xlabel(var)
-    ax.set_ylabel(param)
+    ax.set_ylabel(f"Mean {param}")
+    ax.set_title(f"Influence of {var} on {param}")
+    # plt.show()
 
-def plot_all_vars(df, param):
+def plot_all_vars(df, param, problem):
     """
     Plots the parameters passed vs each of the output variables.
 
@@ -93,12 +59,66 @@ def plot_all_vars(df, param):
         df: dataframe that holds all data
         param: the parameter to be plotted
     """
-
-    f, axs = plt.subplots(3, figsize=(7, 10))
+    f, axs = plt.subplots(int(problem['num_vars']), figsize=(10, 5))
 
     for i, var in enumerate(problem['names']):
-        plot_param_var_conf(axs[i], data[var], var, param, i)
+        plot_param_var_conf(axs, df[var], var, param, i)
+    # plt.savefig(f"{var}_{param}")
 
-for param in ('Fish'):
-    plot_all_vars(data, param)
-    plt.show()
+def job(problem):
+    # Set the repetitions, the amount of steps, and the amount of distinct values per variable
+    replicates = 10
+    max_steps = 10
+    distinct_samples = 3
+
+    # Set the outputs
+    model_reporters = {"Fish": lambda m: m.schedule_Fish.get_agent_count() * m.this_avg_school_size*0.01,
+                        "Fishermen": lambda m: m.schedule_Fisherman.get_agent_count()}
+
+    data = {}
+
+    for i, var in enumerate(problem['names']):
+        # Get the bounds for this variable and get <distinct_samples> samples within this space (uniform)
+        samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype = int)
+
+        # Keep in mind that wolf_gain_from_food should be integers. You will have to change
+        # your code to acommodate for this or sample in such a way that you only get integers.
+        # if var == 'wolf_gain_from_food':
+        #     samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype=int)
+
+        batch = BatchRunner(FishingModel,
+                            max_steps=max_steps,
+                            iterations=replicates,
+                            variable_parameters={var: samples},
+                            model_reporters=model_reporters,
+                            display_progress=True)
+
+        batch.run_all()
+
+        data[var] = batch.get_model_vars_dataframe()
+
+    return [data, problem]
+
+BatchRunner.run_model = run_model_new
+
+problem_list = [{
+    'num_vars': 1,
+    'names': ['initial_fish'],
+    'bounds': [[100, 500]]
+}, {
+    'num_vars': 1,
+    'names': ['initial_fishermen'],
+    'bounds': [[10, 100]]
+}, {
+    'num_vars': 1,
+    'names': ['initial_wallet'],
+    'bounds': [[10, 100]]
+}]
+
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    data = [executor.submit(job, problem_list[i]) for i in range(len(problem_list))]
+
+    for f in concurrent.futures.as_completed(data):
+        for param in ['Fish', "Fishermen"]:
+            plot_all_vars(f.result()[0], param, f.result()[1])
+            plt.savefig(f"{f.result()[1]['names'][0]}_{param}")
