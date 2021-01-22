@@ -216,11 +216,14 @@ class FishingModel(Model):
         '''
         Method that computes information about fisherman.
         '''
-        fisherman_wallet = [fisherman.wallet for fisherman in self.schedule_Fisherman.agents]
-        if len(fisherman_wallet) == 0:
+        if len(self.schedule_Fisherman.agents):
             self.this_avg_wallet = 0
         else:
-            self.this_avg_wallet = sum(fisherman_wallet) / len(fisherman_wallet)
+            fisherman_wallet = [fisherman.wallet for fisherman in self.schedule_Fisherman.agents]
+            if len(fisherman_wallet) == 0:
+                self.this_avg_wallet = 0
+            else:
+                self.this_avg_wallet = sum(fisherman_wallet) / len(fisherman_wallet)
 
     def get_fish_price(self):
         '''
@@ -253,12 +256,12 @@ class FishingModel(Model):
         self.schedule_Fish.step()
         self.schedule_Fisherman.step()
 
+        self.get_fish_stats()
+        self.get_fisherman_stats()
+
         if self.food_bool == True:
             self.schedule_Food.step()
             self.get_food_stats()
-
-        self.get_fish_stats()
-        self.get_fisherman_stats()
 
         if self.recruitment_switch == True and (self.schedule_Fish.time + 1) % 4*3 == 0:
             self.recruit_fisherman()
