@@ -67,13 +67,13 @@ def plot_all_vars(df, param, problem):
 
 def job(problem):
     # Set the repetitions, the amount of steps, and the amount of distinct values per variable
-    replicates = 10
-    max_steps = 10
-    distinct_samples = 3
+    replicates = 1
+    max_steps = 2400
+    distinct_samples = 10
 
     # Set the outputs
     model_reporters = {"Fish": lambda m: m.schedule_Fish.get_agent_count() * m.this_avg_school_size*0.01,
-                        "Fishermen": lambda m: m.schedule_Fisherman.get_agent_count()}
+                        "Cumulative gain": lambda m: m.cumulative_gain}
 
     data = {}
 
@@ -108,17 +108,53 @@ problem_list = [{
 }, {
     'num_vars': 1,
     'names': ['initial_fishermen'],
-    'bounds': [[10, 100]]
-}, {
+    'bounds': [[50, 200]]
+},
+{
+     'num_vars': 1,
+     'names': ['initial_school_size'],
+     'bounds': [[50, 200]]
+},
+{
     'num_vars': 1,
-    'names': ['initial_wallet'],
-    'bounds': [[10, 100]]
+    'names': ['split_size'],
+    'bounds': [[100, 300]]
+},
+{
+    'num_vars': 1,
+    'names': ['beta_fisherman_spawn'],
+    'bounds': [[0.2, 2]]
+},
+{
+    'num_vars': 1,
+    'names': ['fish_reproduction_number'],
+    'bounds': [[1.03, 1.2]]
+},{
+    'num_vars': 1,
+    'names': ['regrowth_time'],
+    'bounds': [[5, 15]]
+},{
+    'num_vars': 1,
+    'names': ['initial_wallet_survival'],
+    'bounds': [[8, 72]]
+},{
+    'num_vars': 1,
+    'names': ['full_catch_reward'],
+    'bounds': [[25, 200]]
+},{
+    'num_vars': 1,
+    'names': ['energy_gain'],
+    'bounds': [[2, 6]]
+},{
+    'num_vars': 1,
+    'names': ['catch_rate'],
+    'bounds': [[0.2, 1]]
 }]
 
 with concurrent.futures.ThreadPoolExecutor() as executor:
     data = [executor.submit(job, problem_list[i]) for i in range(len(problem_list))]
 
     for f in concurrent.futures.as_completed(data):
-        for param in ['Fish', "Fishermen"]:
+        for param in ['Fish', "Cumulative_gain"]:
             plot_all_vars(f.result()[0], param, f.result()[1])
             plt.savefig(f"{f.result()[1]['names'][0]}_{param}")

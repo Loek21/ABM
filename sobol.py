@@ -27,20 +27,20 @@ BatchRunner.run_model = run_model_new
 
 problem = {
     'num_vars': 2,
-    'names': ['initial_fish', 'initial_fishermen'],
-    'bounds': [[100, 500], [10, 100]]
+    'names': ['energy_gain', 'full_catch_reward', 'initial_wallet_survival', 'catch_rate', 'fish_reproduction_number', 'beta_fisherman_spawn'],
+    'bounds': [[2, 6], [25, 200], [8, 72], [0.2, 1], [1.03, 1.2], [0.2, 2]]
 }
 
 model_reporters = {"Fish": lambda m: m.schedule_Fish.get_agent_count() * m.this_avg_school_size*0.01,
-                    "Fisherman":  lambda m: m.schedule_Fisherman.get_agent_count()}
+                    "Cumulative gain": lambda m: m.cumulative_gain}
 
 # Set the repetitions, the amount of steps, and the amount of distinct values per variable
-replicates = 10
-max_steps = 10
+replicates = 100
+max_steps = 2400
 distinct_samples = 10
 
 # We get all our samples here
-param_values = saltelli.sample(problem, distinct_samples)
+param_values = saltelli.sample(problem, distinct_samples, calc_second_order=False)
 
 # READ NOTE BELOW CODE
 batch = BatchRunner(FishingModel,
@@ -50,8 +50,8 @@ batch = BatchRunner(FishingModel,
 
 count = 0
 data = pd.DataFrame(index=range(replicates*len(param_values)),
-                                columns=['initial_fish', 'initial_fishermen'])
-data['Run'], data['Fish'], data['Fisherman'] = None, None, None
+                                columns=['energy_gain', 'full_catch_reward', 'initial_wallet_survival', 'catch_rate', 'fish_reproduction_number', 'beta_fisherman_spawn'])
+data['Run'], data['Fish'], data['Cumulative_gain'] = None, None, None
 
 for i in range(replicates):
     for vals in param_values:
@@ -78,9 +78,9 @@ for i in range(replicates):
 print(data)
 
 fish = sobol.analyze(problem, data['Fish'].values, print_to_console=True)
-fishermen = sobol.analyze(problem, data['Fisherman'].values, print_to_console=True)
+gain = sobol.analyze(problem, data['Cumulative_gain'].values, print_to_console=True)
 
-analysed_data = [fish, fishermen]
+analysed_data = [fish, gain]
 
 def plot_index(s, params, i, name, title=''):
     """
@@ -120,7 +120,7 @@ for Si in range(len(analysed_data)):
     if Si == 0:
         name = "fish"
     else:
-        name = "fishermen"
+        name = "cumulative gain"
     plot_index(analysed_data[Si], problem['names'], '1', name, 'First order sensitivity')
     plt.show()
 

@@ -22,9 +22,9 @@ class FishingModel(Model):
 
     def __init__(self, height=40, width=40,
                  initial_fish=300, initial_fishermen=100,
-                 initial_school_size = 100, split_size = 200, fish_reproduction_number=1.03,
-                 initial_wallet = 100, catch_rate=15, max_load=30, full_catch_reward = 100,
-                 initial_wallet_survival = 4*6, beta_fisherman_spawn = 1, energy_gain = 5, energy_loss = 1, track_n_rolling_gains = 4*3,
+                 initial_school_size = 100, split_size = 200, fish_reproduction_number=1.15,
+                 initial_wallet = 100, catch_rate=0.5, max_load=30, full_catch_reward = 100,
+                 initial_wallet_survival = 4*12, beta_fisherman_spawn = 1, energy_gain = 5, energy_loss = 1, track_n_rolling_gains = 4*3,
                  initial_energy = 10, regrowth_time = 10, food_bool = False, no_fish_zone_bool = False, quotum_bool = False, no_fish_size = 0, quotum = 0,
                 ):
         super().__init__()
@@ -53,7 +53,7 @@ class FishingModel(Model):
         # Fisherman
         self.max_load = max_load
         self.full_catch_reward = full_catch_reward
-        self.catch_rate = catch_rate
+        self.catch_rate = catch_rate*self.max_load
         if self.quotum_bool == True:
             self.yearly_quotum = quotum
         else:
@@ -137,7 +137,7 @@ class FishingModel(Model):
         '''
         Method that provides an easy way of making a bunch of agents at once.
         '''
-        for i in range(n):
+        for i in range(int(n)):
             x = random.randrange(self.width)
             y = random.randrange(self.height)
 
@@ -170,15 +170,16 @@ class FishingModel(Model):
         '''
         Method that spawns new fisherman based on the average gains of the existing fisherman.
         '''
-        rolling_mean_gains = statistics.mean( [statistics.mean(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
 
         # make sure that at least one fisherman exists, who wouldn't try a new bussiness in a new field?
         if self.schedule_Fisherman.get_agent_count() == 0:
             self.init_population(Fisherman, 1)
+
+        rolling_mean_gains = statistics.mean( [statistics.mean(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
         # add new fisherman proportional to the profitability
-        elif rolling_mean_gains > 0:
-                n_new_fisherman = int( np.random.poisson(lam = rolling_mean_gains*self.beta_fisherman_spawn, size = 1) )
-                self.init_population(Fisherman, n_new_fisherman)
+        if rolling_mean_gains > 0:
+            n_new_fisherman = int( np.random.poisson(lam = rolling_mean_gains*self.beta_fisherman_spawn, size = 1) )
+            self.init_population(Fisherman, n_new_fisherman)
 
     def get_fish_stats(self):
         '''
@@ -216,7 +217,7 @@ class FishingModel(Model):
         '''
         Method that computes information about fisherman.
         '''
-        if len(self.schedule_Fisherman.agents):
+        if len(self.schedule_Fisherman.agents) == 0:
             self.this_avg_wallet = 0
         else:
             fisherman_wallet = [fisherman.wallet for fisherman in self.schedule_Fisherman.agents]
@@ -230,7 +231,7 @@ class FishingModel(Model):
         Method for computing reward for fish based on number of previous fish caught
         '''
         if (self.schedule_Fish.time + 1) % (4*12) == 0:
-            
+
             if self.total_yearly_caught == 0:
                 self.full_catch_reward = 20
             else:
@@ -243,7 +244,7 @@ class FishingModel(Model):
             self.total_yearly_caught_prev = self.total_yearly_caught
             self.total_yearly_caught = 0
             self.recruitment_switch = True
-        
+
 
     def step(self):
         '''

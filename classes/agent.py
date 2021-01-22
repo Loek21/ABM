@@ -39,7 +39,7 @@ class Food(Random):
     def step(self):
         if self.food == False:
             self.regrowth_time -= 1
-            if self.regrowth_time == 0:
+            if self.regrowth_time <= 0:
                 self.food = True
                 self.regrowth_time = self.model.regrowth_time
 
@@ -57,12 +57,12 @@ class Fish(Random):
         self.move()
 
         # New fish spawn every 52 weeks (added + 1 just so they don't reproduce immediately)
-        if (curr_time + 1) % 52 == 0:
+        if (curr_time + 1) % 48 == 0:
             if self.model.food_bool == False:
                 self.size *= self.model.fish_reproduction_number*random.uniform(0.95,1.05)
                 # print(self.model.fish_reproduction_number)
             else:
-                self.size *= 1.15*random.uniform(0.95,1.05)
+                self.size *= self.model.fish_reproduction_number*random.uniform(0.95,1.05)
 
         # Looking for Food
         surrounding = MultiGrid.get_neighbors(self.model.grid, self.pos, True, True,0)
@@ -153,7 +153,7 @@ class Fisherman(Random):
         # update the rolling gains
         del self.rolling_gains[0]
         self.rolling_gains.append(temp_gain)
-        
+
         # update the wallet
         self.wallet  += temp_gain
 
