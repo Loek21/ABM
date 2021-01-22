@@ -24,7 +24,7 @@ class FishingModel(Model):
                  initial_fish=300, initial_fishermen=100,
                  initial_school_size = 100, split_size = 200, fish_reproduction_number=1.03,
                  initial_wallet = 100, catch_rate=15, max_load=30, full_catch_reward = 100,
-                 initial_wallet_survival = 12*2, prop_plus_wallet_spawn = 1, avg_wallet_spawn_threshold = 5.0, energy_gain = 5, energy_loss = 1, track_n_rolling_gains = 4*3,
+                 initial_wallet_survival = 4*6, beta_fisherman_spawn = 1, energy_gain = 5, energy_loss = 1, track_n_rolling_gains = 4*3,
                  initial_energy = 10, regrowth_time = 10, food_bool = False, no_fish_zone_bool = False, quotum_bool = False, no_fish_size = 0, quotum = 0,
                 ):
         super().__init__()
@@ -61,8 +61,7 @@ class FishingModel(Model):
         self.total_yearly_caught = 0
         self.total_yearly_caught_prev = 8000
         self.recruitment_switch = True
-        self.prop_plus_wallet_spawn = prop_plus_wallet_spawn
-        self.avg_wallet_spawn_threshold = avg_wallet_spawn_threshold
+        self.beta_fisherman_spawn = beta_fisherman_spawn
         self.this_avg_wallet = initial_wallet
         self.track_n_rolling_gains = track_n_rolling_gains
 
@@ -100,7 +99,7 @@ class FishingModel(Model):
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
                   "Available food": lambda m: self.food_amount,
-                  # "Cumulative gain": lambda m: self.cumulative_gain,
+                  "Cumulative gain": lambda m: self.cumulative_gain,
                   "Fish price": lambda m: self.full_catch_reward})
         else:
             self.datacollector = DataCollector(
@@ -109,7 +108,7 @@ class FishingModel(Model):
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
-                  # "Cumulative gain": lambda m: self.cumulative_gain,
+                  "Cumulative gain": lambda m: self.cumulative_gain,
                   "Fish price": lambda m: self.full_catch_reward})
 
         # Keep a list of all agents
@@ -171,19 +170,14 @@ class FishingModel(Model):
         '''
         Method that spawns new fisherman based on the average gains of the existing fisherman.
         '''
-        n_fisherman   = self.schedule_Fisherman.get_agent_count()
-        profitability = self.this_avg_wallet / self.initial_wallet
-
-        # rolling_gains = statistics.mean( [sum(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
-        # print(rolling_gains)
+        rolling_mean_gains = statistics.mean( [statistics.mean(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
 
         # make sure that at least one fisherman exists, who wouldn't try a new bussiness in a new field?
-        if n_fisherman == 0:
+        if self.schedule_Fisherman.get_agent_count() == 0:
             self.init_population(Fisherman, 1)
         # add new fisherman proportional to the profitability
-        elif profitability > self.avg_wallet_spawn_threshold:
-                n_new_fisherman = int( (profitability / self.avg_wallet_spawn_threshold)*self.prop_plus_wallet_spawn)
-                # print("SPAWNING NEW FISHERMAN ", n_new_fisherman)
+        elif rolling_mean_gains > 0:
+                n_new_fisherman = int( np.random.poisson(lam = rolling_mean_gains*self.beta_fisherman_spawn, size = 1) )
                 self.init_population(Fisherman, n_new_fisherman)
 
     def get_fish_stats(self):
@@ -228,10 +222,33 @@ class FishingModel(Model):
         else:
             self.this_avg_wallet = sum(fisherman_wallet) / len(fisherman_wallet)
 
+    def get_fish_price(self):
+        '''
+        Method for computing reward for fish based on number of previous fish caught
+        '''
+        if (self.schedule_Fish.time + 1) % (4*12) == 0:
+            
+            if self.total_yearly_caught == 0:
+                self.full_catch_reward = 20
+            else:
+                self.full_catch_reward = 100 * self.total_yearly_caught_prev/self.total_yearly_caught
+                if self.full_catch_reward < 20:
+                    self.full_catch_reward = 20
+                if self.full_catch_reward > 250:
+                    self.full_catch_reward = 250
+
+            self.total_yearly_caught_prev = self.total_yearly_caught
+            self.total_yearly_caught = 0
+            self.recruitment_switch = True
+        
+
     def step(self):
         '''
         Method that calls the step method for each of the sheep, and then for each of the wolves.
         '''
+
+        self.calc_fish_reproduction()
+        self.get_fish_price()
 
         self.schedule_Fish.step()
         self.schedule_Fisherman.step()
@@ -243,12 +260,11 @@ class FishingModel(Model):
         self.get_fish_stats()
         self.get_fisherman_stats()
 
-        if self.recruitment_switch == True:
+        if self.recruitment_switch == True and (self.schedule_Fish.time + 1) % 4*3 == 0:
             self.recruit_fisherman()
 
         # Save the statistics
-        curr_time = self.schedule_Fish.time
-        if (curr_time + 26) % 52 == 0:
+        if (self.schedule_Fish.time + 4*6) % (4*12) == 0:
             self.datacollector.collect(self)
 
     def run_model(self, step_count):
@@ -262,17 +278,7 @@ class FishingModel(Model):
             if self.schedule_Fish.get_agent_count() == 0 or self.schedule_Fisherman.get_agent_count() == 0:
                 break
 
-            if (i+1) % 52 == 0:
-                self.calc_fish_reproduction()
-                self.full_catch_reward = 100 * self.total_yearly_caught_prev/self.total_yearly_caught
-                if self.full_catch_reward < 20:
-                    self.full_catch_reward = 20
-                if self.full_catch_reward > 250:
-                    self.full_catch_reward = 250
-                self.total_yearly_caught_prev = self.total_yearly_caught
-                self.total_yearly_caught = 0
-                self.recruitment_switch = True
-            self.step()
-
             if self.total_yearly_caught >= self.yearly_quotum:
                 self.recruitment_switch = False
+
+            self.step()

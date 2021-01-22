@@ -9,8 +9,8 @@ class Random(Agent):
     def __init__(self, id, model, pos, size, wallet, switch, regrowth_time, food, energy_loss):
         super().__init__(id, model)
 
-        self.pos = pos
-        self.size = size
+        self.pos    = pos
+        self.size   = size
         self.wallet = wallet
         self.switch = switch
         self.energy_loss = energy_loss
@@ -153,7 +153,7 @@ class Fisherman(Random):
         # update the rolling gains
         del self.rolling_gains[0]
         self.rolling_gains.append(temp_gain)
-
+        
         # update the wallet
         self.wallet  += temp_gain
 
