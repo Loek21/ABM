@@ -51,7 +51,7 @@ batch = BatchRunner(FishingModel,
 count = 0
 data = pd.DataFrame(index=range(replicates*len(param_values)),
                                 columns=['energy_gain', 'full_catch_reward', 'initial_wallet_survival', 'catch_rate', 'fish_reproduction_number', 'beta_fisherman_spawn'])
-data['Run'], data['Fish'], data['Cumulative_gain'] = None, None, None
+data['Run'], data['Fish'], data['Cumulative gain'] = None, None, None
 
 for i in range(replicates):
     for vals in param_values:
@@ -69,7 +69,7 @@ for i in range(replicates):
         iteration_data['Run'] = count # Don't know what causes this, but iteration number is not correctly filled
         print(data)
         data.iloc[count, 0:problem['num_vars']] = vals
-        data.iloc[count, problem['num_vars']:problem['num_vars']+2] = iteration_data
+        data.iloc[count, problem['num_vars']:problem['num_vars']+len(model_reporters)+1] = iteration_data
         count += 1
 
 
