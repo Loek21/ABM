@@ -26,7 +26,7 @@ def run_model_new(self, model):
 BatchRunner.run_model = run_model_new
 
 problem = {
-    'num_vars': 2,
+    'num_vars': 6,
     'names': ['energy_gain', 'full_catch_reward', 'initial_wallet_survival', 'catch_rate', 'fish_reproduction_number', 'beta_fisherman_spawn'],
     'bounds': [[2, 6], [25, 200], [8, 72], [0.2, 1], [1.03, 1.2], [0.2, 2]]
 }
@@ -67,9 +67,9 @@ for i in range(replicates):
         batch.run_iteration(variable_parameters, tuple(vals), count)
         iteration_data = batch.get_model_vars_dataframe().iloc[count]
         iteration_data['Run'] = count # Don't know what causes this, but iteration number is not correctly filled
-        # print(data)
-        data.iloc[count, 0:2] = vals
-        data.iloc[count, 2:5] = iteration_data
+        print(data)
+        data.iloc[count, 0:problem['num_vars']] = vals
+        data.iloc[count, problem['num_vars']:problem['num_vars']+2] = iteration_data
         count += 1
 
 
