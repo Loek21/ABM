@@ -4,6 +4,7 @@ from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
+import statsmodels.api as sm
 
 from .agent import *
 
@@ -93,7 +94,8 @@ class FishingModel(Model):
 
         if self.food_bool == True:
             self.datacollector = DataCollector(
-                 {"Fish schools": lambda m: self.schedule_Fish.get_agent_count(),
+                 {"time": lambda m: self.schedule_Fish.time,
+                  "Fish schools": lambda m: self.schedule_Fish.get_agent_count(),
                   "Fishermen": lambda m: self.schedule_Fisherman.get_agent_count(),
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
@@ -103,7 +105,8 @@ class FishingModel(Model):
                   "Fish price": lambda m: self.full_catch_reward})
         else:
             self.datacollector = DataCollector(
-                 {"Fish schools": lambda m: self.schedule_Fish.get_agent_count(),
+                 {"time": lambda m: self.schedule_Fish.time,
+                  "Fish schools": lambda m: self.schedule_Fish.get_agent_count(),
                   "Fishermen": lambda m: self.schedule_Fisherman.get_agent_count(),
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
@@ -124,6 +127,11 @@ class FishingModel(Model):
         # This is required for the datacollector to work
         self.running = True
         self.datacollector.collect(self)
+
+        # full run statistics
+        self.fish_mean     = -666
+        self.fish_slope    = -666
+        self.fish_variance = -666
 
     def init_food(self):
         '''
@@ -246,6 +254,20 @@ class FishingModel(Model):
             self.recruitment_switch = True
 
 
+    def get_model_stats(self):
+        '''
+        Method for computing full model run statistics
+        '''
+        final_data        = self.datacollector.get_model_vars_dataframe()
+        final_total_fish  = final_data["Total fish"] * final_data["Average school size"]
+
+        mod = sm.OLS(final_total_fish, sm.add_constant(final_data["time"]))
+        res = mod.fit()
+
+        self.fish_mean     = res.params[0]
+        self.fish_slope    = res.params[1]
+        self.fish_variance = np.var(final_total_fish)
+
     def step(self):
         '''
         Method that calls the step method for each of the sheep, and then for each of the wolves.
@@ -286,3 +308,5 @@ class FishingModel(Model):
                 self.recruitment_switch = False
 
             self.step()
+    
+        self.get_model_stats()
