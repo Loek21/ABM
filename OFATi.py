@@ -23,7 +23,7 @@ def run_model_new(self, model):
         while model.running and model.schedule_Fisherman.steps < self.max_steps:
             model.step()
         model.get_model_stats()
-        
+
         if hasattr(model, "datacollector"):
             return model.datacollector
         else:
@@ -45,7 +45,7 @@ def job(problem):
 
     for i, var in enumerate(problem['names']):
         # Get the bounds for this variable and get <distinct_samples> samples within this space (uniform)
-        samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype = int)
+        samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype = float)
 
         # Keep in mind that wolf_gain_from_food should be integers. You will have to change
         # your code to acommodate for this or sample in such a way that you only get integers.
@@ -120,12 +120,12 @@ problem_list = [{
 # check that the directory exists
 if not os.path.exists('results_OFAT'):
     os.makedirs('results_OFAT')
-    
+
 for i in range(len(problem_list)):
     if not os.path.exists('results_OFAT/' + problem_list[i]["names"][0]):
         os.makedirs('results_OFAT/' + problem_list[i]["names"][0])
-    
-    
+
+
 # start saving the replications
 while True:
     with concurrent.futures.ThreadPoolExecutor() as executor:
