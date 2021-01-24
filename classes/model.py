@@ -259,7 +259,7 @@ class FishingModel(Model):
         Method for computing full model run statistics
         '''
         final_data        = self.datacollector.get_model_vars_dataframe()
-        final_total_fish  = final_data["Total fish"] * final_data["Average school size"]
+        final_total_fish  = final_data["Total fish"]
 
         mod = sm.OLS(final_total_fish, sm.add_constant(final_data["time"]))
         res = mod.fit()
@@ -308,5 +308,5 @@ class FishingModel(Model):
                 self.recruitment_switch = False
 
             self.step()
-    
+
         self.get_model_stats()
