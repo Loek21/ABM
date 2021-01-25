@@ -66,9 +66,12 @@ def plot_param_var_conf(ax, df, var, param, i):
         var: variables to be taken from the dataframe
         param: which output variable to plot
     """
-
-    x = df.groupby(var).mean().reset_index()[var]
-    y = df.groupby(var).mean()[param]
+    if param == "Fish mean":
+        x = df.groupby(var).mean().reset_index()[var]
+        y = df.groupby(var).mean()[param] + df.groupby(var).mean()['Fish slope']*1200
+    else:
+        x = df.groupby(var).mean().reset_index()[var]
+        y = df.groupby(var).mean()[param]
 
     replicates = df.groupby(var)[param].count()
     err = (1.96 * df.groupby(var)[param].std()) / np.sqrt(replicates)
@@ -76,31 +79,21 @@ def plot_param_var_conf(ax, df, var, param, i):
     ax.plot(x, y, c='k')
     ax.fill_between(x, y - err, y + err, alpha=0.5)
 
-    ax.set_xlabel(var)
-    ax.set_ylabel(f"Mean {param}")
-    ax.set_title(f"Influence of {var} on {param}")
-    # plt.show()
-
-def plot_all_vars(df, param, problem):
-    """
-    Plots the parameters passed vs each of the output variables.
-
-    Args:
-        df: dataframe that holds all data
-        param: the parameter to be plotted
-    """
-    # print(problem['num_vars'])
-    f, axs = plt.subplots(int(problem['num_vars']), figsize=(10, 5))
-
-    for i, var in enumerate(problem['names']):
-        plot_param_var_conf(axs, df, var, param, i)
+    ax.set_xlabel(var, fontsize=8)
+    ax.set_ylabel(f"Mean {param}", fontsize=8)
+    ax.set_title(f"Influence of {var} on {param}", fontsize=10)
 
 if os.path.exists('results_OFAT'):
     for i, d in enumerate(os.listdir('results_OFAT')):
-        file = pd.read_pickle('results_OFAT/' + d +'/merged')
+        file1 = pd.read_pickle('results_OFAT/' + d +'/merged')
+        file2 = pd.read_pickle('results_OFAT/' + d +'/merged_F')
+        file = pd.concat([file1, file2])
+        fig = plt.figure(figsize=(10,4))
+        fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=0.7)
         for problem in problem_list:
             if problem['names'][0] == d:
                 instance = problem
-        for param in ["Cumulative gain", "Fish mean", "Fish slope", "Fish variance"]:
-            plot_all_vars(file, param, instance)
-            plt.savefig(f"results_OFAT/" + d +f"/plot_{param}")
+        for i, param in enumerate(["Cumulative gain", "Fish mean", "Fish slope", "Fish variance"]):
+            ax = fig.add_subplot(2,2,(i+1))
+            plot_param_var_conf(ax, file, instance['names'][0], param, i)
+        plt.savefig(f"results_OFAT/" + d +f"/plot_{instance['names'][0]}")
