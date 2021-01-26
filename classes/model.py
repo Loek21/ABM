@@ -42,8 +42,8 @@ class FishingModel(Model):
 
         # Booleans
         self.food_bool = food_bool
-        self.no_fish_zone_bool = no_fish_zone_bool
-        self.quotum_bool = quotum_bool
+        self.no_fish_zone_bool = no_fish_size > 0
+        self.quotum_bool       = quotum > 0
 
         #  Fish
         self.fish_reproduction_number = fish_reproduction_number
@@ -68,7 +68,7 @@ class FishingModel(Model):
 
         # food
         self.energy_gain = energy_gain
-        if self.food_bool == False:
+        if not self.food_bool:
             self.energy_loss = 0
         else:
             self.energy_loss = energy_loss
@@ -77,7 +77,7 @@ class FishingModel(Model):
         self.food_amount = height*width
 
         # No fish zone
-        if self.no_fish_zone_bool == True:
+        if self.no_fish_zone_bool:
             self.no_fish_size = int(no_fish_size*(1/no_fish_size)**(1/2) * width)
         else:
             self.no_fish_size = 0
@@ -87,12 +87,12 @@ class FishingModel(Model):
         # new_agent()
         self.schedule_Fish = RandomActivation(self)
         self.schedule_Fisherman = RandomActivation(self)
-        if self.food_bool == True:
+        if self.food_bool:
             self.schedule_Food = RandomActivation(self)
 
         self.grid = MultiGrid(self.width, self.height, torus=True)
 
-        if self.food_bool == True:
+        if self.food_bool:
             self.datacollector = DataCollector(
                  {"time": lambda m: self.schedule_Fish.time,
                   "Fish schools": lambda m: self.schedule_Fish.get_agent_count(),
@@ -301,8 +301,8 @@ class FishingModel(Model):
         for i in range(step_count):
 
             # if either the Fish or the Fishermen amount reaches 0, stop.
-            if self.schedule_Fish.get_agent_count() == 0 or self.schedule_Fisherman.get_agent_count() == 0:
-                break
+            # if self.schedule_Fish.get_agent_count() == 0 or self.schedule_Fisherman.get_agent_count() == 0:
+            #    break
 
             if self.total_yearly_caught >= self.yearly_quotum:
                 self.recruitment_switch = False
