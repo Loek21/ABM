@@ -101,7 +101,7 @@ class FishingModel(Model):
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
                   "Available food": lambda m: self.food_amount,
-                  # "Cumulative gain": lambda m: self.cumulative_gain,
+                  "Cumulative gain": lambda m: self.cumulative_gain,
                   "Fish price": lambda m: self.full_catch_reward})
         else:
             self.datacollector = DataCollector(
@@ -111,7 +111,7 @@ class FishingModel(Model):
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
-                  # "Cumulative gain": lambda m: self.cumulative_gain,
+                  "Cumulative gain": lambda m: self.cumulative_gain,
                   "Fish price": lambda m: self.full_catch_reward})
 
         # Keep a list of all agents
