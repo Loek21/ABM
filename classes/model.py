@@ -12,7 +12,7 @@ class FishingModel(Model):
     '''
     Wolf-Sheep Predation Type Model for Fishermen and Fish
     '''
-    food_bool = False
+    food_bool = True
     no_fish_zone_bool = True
     quotum_bool = False
     no_fish_size = 0.25
@@ -26,7 +26,7 @@ class FishingModel(Model):
                  initial_school_size = 100, split_size = 200, fish_reproduction_number=1.15,
                  initial_wallet = 100, catch_rate=0.5, max_load=30, full_catch_reward = 100,
                  initial_wallet_survival = 4*12, beta_fisherman_spawn = 1, energy_gain = 5, energy_loss = 1, track_n_rolling_gains = 4*3,
-                 initial_energy = 10, regrowth_time = 10, food_bool = False, no_fish_zone_bool = False, quotum_bool = False, no_fish_size = 0, quotum = 0,
+                 initial_energy = 10, regrowth_time = 10, food_bool = True, no_fish_zone_bool = False, quotum_bool = False, no_fish_size = 0, quotum = 0,
                 ):
         super().__init__()
 
@@ -101,7 +101,7 @@ class FishingModel(Model):
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
                   "Available food": lambda m: self.food_amount,
-                  "Cumulative gain": lambda m: self.cumulative_gain,
+                  # "Cumulative gain": lambda m: self.cumulative_gain,
                   "Fish price": lambda m: self.full_catch_reward})
         else:
             self.datacollector = DataCollector(
@@ -111,7 +111,7 @@ class FishingModel(Model):
                   "Average wallet": lambda m: self.this_avg_wallet,
                   "Average school size": lambda m: self.this_avg_school_size,
                   "Total fish": lambda m: self.schedule_Fish.get_agent_count() * self.this_avg_school_size*0.01,
-                  "Cumulative gain": lambda m: self.cumulative_gain,
+                  # "Cumulative gain": lambda m: self.cumulative_gain,
                   "Fish price": lambda m: self.full_catch_reward})
 
         # Keep a list of all agents
@@ -272,8 +272,8 @@ class FishingModel(Model):
         '''
         Method that calls the step method for each of the sheep, and then for each of the wolves.
         '''
-
-        self.calc_fish_reproduction()
+        if self.food_bool == False:
+            self.calc_fish_reproduction()
         self.get_fish_price()
 
         self.schedule_Fish.step()
