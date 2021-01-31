@@ -1,1 +1,0 @@
-pipenv run python results_detailed.py

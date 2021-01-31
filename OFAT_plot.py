@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+'''
+Used for plotting OFAT data, make sure results_OFAT folder contains the neccessary dataframes.
+'''
+
 problem_list = [{
     'num_vars': 1,
     'names': ['initial_fish'],
@@ -57,14 +61,7 @@ instance = None
 
 def plot_param_var_conf(ax, df, var, param, i):
     """
-    Helper function for plot_all_vars. Plots the individual parameter vs
-    variables passed.
-
-    Args:
-        ax: the axis to plot to
-        df: dataframe that holds the data to be plotted
-        var: variables to be taken from the dataframe
-        param: which output variable to plot
+    Helper function that assists in creating plots for OFAT sensitivity analysis.
     """
     if param == "Fish mean":
         x = df.groupby(var).mean().reset_index()[var]
@@ -85,9 +82,7 @@ def plot_param_var_conf(ax, df, var, param, i):
 
 if os.path.exists('results_OFAT'):
     for i, d in enumerate(os.listdir('results_OFAT')):
-        file1 = pd.read_pickle('results_OFAT/' + d +'/merged')
-        file2 = pd.read_pickle('results_OFAT/' + d +'/merged_F')
-        file = pd.concat([file1, file2])
+        file = pd.read_pickle('results_OFAT/' + d +'/merged')
         fig = plt.figure(figsize=(10,4))
         fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=0.7)
         for problem in problem_list:
