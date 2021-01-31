@@ -11,19 +11,22 @@ import datetime
 from itertools import combinations
 import sys
 
+'''
+Runs OFAT sensitivity analysis, run using run_SOBOLi.bat to enable concurrent processes.
+'''
+
 def run_model_new(self, model):
-        """Run a model object to completion, or until reaching max steps.
-        If your model runs in a non-standard way, this is the method to modify
-        in your subclass.
-        """
-        while model.running and model.schedule_Fisherman.steps < self.max_steps:
-            model.step()
-        model.get_model_stats()
-            
-        if hasattr(model, "datacollector"):
-            return model.datacollector
-        else:
-            return None
+    """
+    Adjustment to run_model function in Mesa API
+    """
+    while model.running and model.schedule_Fisherman.steps < self.max_steps:
+        model.step()
+    model.get_model_stats()
+
+    if hasattr(model, "datacollector"):
+        return model.datacollector
+    else:
+        return None
 
 BatchRunner.run_model = run_model_new
 
@@ -46,12 +49,11 @@ distinct_samples = 10
 # check that the directory exists
 if not os.path.exists('results_SOBOL'):
     os.makedirs('results_SOBOL')
-    
+
 while True:
      # We get all our samples here
     param_values = saltelli.sample(problem, distinct_samples, calc_second_order=False)
 
-    # READ NOTE BELOW CODE
     batch = BatchRunner(FishingModel,
                         max_steps=max_steps,
                         variable_parameters={name:[] for name in problem['names']},
@@ -64,10 +66,12 @@ while True:
 
 
     for vals in param_values:
+
         # Change parameters that should be integers
         vals = list(vals)
         vals[1] = int(vals[1])
         vals[0] = int(vals[0])
+
         # Transform to dict with parameter names and their values
         variable_parameters = {}
         for name, val in zip(problem['names'], vals):
@@ -75,11 +79,10 @@ while True:
 
         batch.run_iteration(variable_parameters, tuple(vals), count)
         iteration_data = batch.get_model_vars_dataframe().iloc[count]
-        iteration_data['Run'] = count # Don't know what causes this, but iteration number is not correctly filled
+        iteration_data['Run'] = count
         data.iloc[count, 0:problem['num_vars']] = vals
         data.iloc[count, problem['num_vars']:problem['num_vars']+len(model_reporters)+1] = iteration_data
         count += 1
-
 
         print(f'{count / (len(param_values) * (replicates)) * 100:.2f}% done', end="\r", flush = True)
 

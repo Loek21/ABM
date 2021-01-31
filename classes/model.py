@@ -10,7 +10,7 @@ from .agent import *
 
 class FishingModel(Model):
     '''
-    Wolf-Sheep Predation Type Model for Fishermen and Fish
+    Lokta-Volterra Type Model for Fishermen and Fish
     '''
     food_bool = True
     no_fish_zone_bool = True
@@ -18,8 +18,6 @@ class FishingModel(Model):
     no_fish_size = 0.25
     quotum = 3000
     step_count = 5000
-    # model = FishingModel(food_bool = food_bool, no_fish_zone_bool = no_fish_zone_bool, quotum_bool = quotum_bool, no_fish_size = no_fish_size, quotum = quotum)
-    # model.run_model(iterations)
 
     def __init__(self, height=40, width=40,
                  initial_fish=300, initial_fishermen=100,
@@ -83,8 +81,6 @@ class FishingModel(Model):
             self.no_fish_size = 0
 
         # Add a schedule for fish and fishermen seperately to prevent race-conditions
-        # self.schedule = RandomActivation(self)
-        # new_agent()
         self.schedule_Fish = RandomActivation(self)
         self.schedule_Fisherman = RandomActivation(self)
         if self.food_bool:
@@ -184,6 +180,7 @@ class FishingModel(Model):
             self.init_population(Fisherman, 1)
 
         rolling_mean_gains = statistics.mean( [statistics.mean(fisherman.rolling_gains) for fisherman in self.schedule_Fisherman.agents] )
+
         # add new fisherman proportional to the profitability
         if rolling_mean_gains > 0:
             n_new_fisherman = int( np.random.poisson(lam = rolling_mean_gains*self.beta_fisherman_spawn, size = 1) )
@@ -200,6 +197,9 @@ class FishingModel(Model):
             self.this_avg_school_size = sum(fish_size) / len(fish_size)
 
     def get_food_stats(self):
+        '''
+        Method that computes the current amount of available food.
+        '''
         food_amount = 0
         for agent in self.schedule_Food.agents:
             if agent.food == True:
@@ -216,7 +216,7 @@ class FishingModel(Model):
         percentage = 1 - (self.fish_cap - total_fish)/self.fish_cap
 
         self.fish_reproduction_number = 0.2/(1+0.00005**(-(percentage-0.5))) + 1
-        # print(self.fish_reproduction_number)
+
         # the function doesn't cap at 1 exactly, so making sure it does here
         if percentage == 1:
             self.fish_reproduction_number = 1
@@ -247,6 +247,10 @@ class FishingModel(Model):
                 if self.full_catch_reward < 20:
                     self.full_catch_reward = 20
                 if self.full_catch_reward > 250:
+                    self.full_catch_reward = 250
+                if self.total_yearly_caught_prev == 0:
+                    self.full_catch_reward = 250
+                if self.total_yearly_caught == 0:
                     self.full_catch_reward = 250
 
             self.total_yearly_caught_prev = self.total_yearly_caught
@@ -299,10 +303,6 @@ class FishingModel(Model):
         '''
 
         for i in range(step_count):
-
-            # if either the Fish or the Fishermen amount reaches 0, stop.
-            # if self.schedule_Fish.get_agent_count() == 0 or self.schedule_Fisherman.get_agent_count() == 0:
-            #    break
 
             if self.total_yearly_caught >= self.yearly_quotum:
                 self.recruitment_switch = False

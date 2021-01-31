@@ -13,12 +13,13 @@ import os
 import datetime
 import pickle
 
-# OFAT parameters
+'''
+Runs OFAT sensitivity analysis for the no fishing zone size and quotum amounts, run using run_results.bat to enable concurrent processes.
+'''
 
 def run_model_new(self, model):
-        """Run a model object to completion, or until reaching max steps.
-        If your model runs in a non-standard way, this is the method to modify
-        in your subclass.
+        """
+        Adjustment to run_model function in Mesa API
         """
         while model.running and model.schedule_Fisherman.steps < self.max_steps:
             model.step()
@@ -30,6 +31,9 @@ def run_model_new(self, model):
             return None
 
 def job(problem):
+    '''
+    Function that performs the OFAT job for one repetition, returns the data and problem it belongs to.
+    '''
     # Set the repetitions, the amount of steps, and the amount of distinct values per variable
     replicates       = 1
     max_steps        = 4800
@@ -44,13 +48,9 @@ def job(problem):
     data = {}
 
     for i, var in enumerate(problem['names']):
+
         # Get the bounds for this variable and get <distinct_samples> samples within this space (uniform)
         samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype = float)
-
-        # Keep in mind that wolf_gain_from_food should be integers. You will have to change
-        # your code to acommodate for this or sample in such a way that you only get integers.
-        # if var == 'wolf_gain_from_food':
-        #     samples = np.linspace(*problem['bounds'][i], num=distinct_samples, dtype=int)
 
         batch = BatchRunner(FishingModel,
                             max_steps=max_steps,

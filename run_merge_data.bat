@@ -1,1 +1,0 @@
-pipenv run python merge_data.py

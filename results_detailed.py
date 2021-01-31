@@ -4,9 +4,13 @@ import sys
 import os
 import datetime
 
+'''
+Function for obtaining results with different no fishing zone sizes and quotum amounts.
+'''
+
 iterations   = 4800
 no_fish_size = [0, .2, .4,    0,    0,    0]
-quotum       = [0,  0,  0, 2000, 4000, 6000] 
+quotum       = [0,  0,  0, 2000, 4000, 6000]
 
 # check that the directory exists
 if not os.path.exists('results_detailed'):

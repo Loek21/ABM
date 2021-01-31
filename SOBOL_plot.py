@@ -4,6 +4,10 @@ import numpy as np
 import os
 from SALib.analyze import sobol
 
+'''
+Used for plotting Sobol data, make sure results_SOBOL folder contains the neccessary dataframes.
+'''
+
 problem = {
     'num_vars': 6,
     'names': ['energy_gain', 'full_catch_reward', 'initial_wallet_survival', 'catch_rate', 'fish_reproduction_number', 'beta_fisherman_spawn'],
@@ -12,20 +16,11 @@ problem = {
 
 def plot_index(ax, s, params, i, name, title=''):
     """
-    Creates a plot for Sobol sensitivity analysis that shows the contributions
-    of each parameter to the global sensitivity.
-
-    Args:
-        s (dict): dictionary {'S#': dict, 'S#_conf': dict} of dicts that hold
-            the values for a set of parameters
-        params (list): the parameters taken from s
-        i (str): string that indicates what order the sensitivity is.
-        title (str): title for the plot
+    Helper function that assists in creating plots for OFAT sensitivity analysis.
     """
 
     indices = s['S' + i]
     errors = s['S' + i + '_conf']
-
     l = len(indices)
     ax.set_title(title + f" for {name}")
     ax.set_ylim([-0.2, len(indices) - 1 + 0.2])
@@ -36,13 +31,11 @@ def plot_index(ax, s, params, i, name, title=''):
         ax.set_yticklabels([])
     ax.errorbar(indices, range(l), xerr=errors, linestyle='None', marker='o', capsize=5)
     ax.axvline(0, c='grey', ls="--")
+    ax.set_xlabel(f"S{i}")
 
 if os.path.exists('results_SOBOL'):
 
-    file1 = pd.read_pickle('results_SOBOL/merged')
-    file2 = pd.read_pickle('results_SOBOL/merged_F')
-    file = pd.concat([file1, file2])
-
+    file = pd.read_pickle('results_SOBOL/merged')
     for i, param in enumerate(["Cumulative_gain", "Fish mean", "Fish slope", "Fish variance"]):
         data = sobol.analyze(problem, file[param].values, print_to_console=True, calc_second_order=False)
         fig = plt.figure(figsize=(11,5))
@@ -52,4 +45,4 @@ if os.path.exists('results_SOBOL'):
         plot_index(ax1, data, problem['names'], '1', param, 'First order sensitivity')
         plot_index(ax2, data, problem['names'], 'T', param, 'Total order sensitivity')
 
-        plt.savefig(f"results_SOBOL/plot_{param}")
+        plt.savefig(f"results_SOBOL/plot_{param}_test")
