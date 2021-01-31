@@ -23,3 +23,13 @@ This file lets one visually run the model from the browser. Run this and start t
 This file is used for OFAT (One Factor At a Time) analysis, which allows you to quickly look at the influence of parameters, without taking into account the interdependency between parameters. This file only allows for a single replication of the parameters chosen, because we chose to split up the work load over several computers/cores. Thus, for full effectiveness, this file can be run in parallel over several terminals/computers. The results are saved to a common directory.
 
 #### SOBOLi.py
+This file is similar to the OFAT file described above, only it employs the Sobol analysis technique, which accounts for the interaction between different parameters. This file is also set to only create 1 replicate, and is run in parallel over multiple terminals/computers for the same reasons as above.
+
+#### Remaining files
+The remaining files are less important and serve as data, data merging, and plotting files which were used specifically for our research. We chose to leave these files in for completeness' sake, but can otherwise be ignored.
+
+
+### Extra results from the research paper
+Here we add additional OFAT results we didn't include in our main research paper for the sake of brevity. We discuss the most interesting/important ones in our paper, but they are all shown here without discussion, just for completeness.
+
+![image](results_OFAT/beta_fisherman_spawn/plot_beta_fisherman_spawn.png)
