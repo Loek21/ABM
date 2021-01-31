@@ -33,3 +33,23 @@ The remaining files are less important and serve as data, data merging, and plot
 Here we add additional OFAT results we didn't include in our main research paper for the sake of brevity. We discuss the most interesting/important ones in our paper, but they are all shown here without discussion, just for completeness.
 
 ![image](results_OFAT/beta_fisherman_spawn/plot_beta_fisherman_spawn.png)
+
+![image](results_OFAT/catch_rate/plot_catch_rate.png)
+
+![image](results_OFAT/energy_gain/plot_energy_gain.png)
+
+![image](results_OFAT/fish_reproduction_number/plot_fish_reproduction_number.png)
+
+![image](results_OFAT/full_catch_reward/plot_full_catch_reward.png)
+
+![image](results_OFAT/initial_fish/plot_initial_fish.png)
+
+![image](results_OFAT/initial_fishermen/plot_initial_fishermen.png)
+
+![image](results_OFAT/initial_school_size/plot_initial_school_size.png)
+
+![image](results_OFAT/initial_wallet_survival/plot_initial_wallet_survival.png)
+
+![image](results_OFAT/regrowth_time/plot_regrowth_time.png)
+
+![image](results_OFAT/split_size/plot_split_size.png)
